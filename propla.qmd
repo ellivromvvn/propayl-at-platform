@@ -1,0 +1,225 @@
+---
+title: "ProPla rstats"
+format: docx
+editor: visual
+author: Orville D. Hombrebeueno
+date: "`r Sys.Date()`"
+---
+
+### Pamagat
+
+Kaugnayan ng Demograpikong Propayl sa mga Platform at Estratehiya sa Pagkatuto ng mga Piling Estudyante ng Nueva Vizcaya State University
+
+### Paglalahad ng Layunin
+
+Ang pananaliksik na ito ay naglalayong tukuyin ang kagamitan at estratehiya sa pagkatuto ng mga estudyante sa Nueva Vizcaya State University Bayombong Campus. Nilalayon nitong:
+
+1.  Matukoy ang demograpikong propayl ng mga estudyante sa 1st year.
+
+2.  Matukoy ang mga platforms na ginagamit ng mga tagatugon.
+
+3.  Matukoy ang mga estratehiya na ginagamit ng mga tagatugon.
+
+4.  Matukoy ang kaugnayan ng demograpikong propayl at platforms sa estratehiya sa pagkatuto ng mga estudyante.
+
+### Notes
+
+1.  Negative statements
+    - None
+
+### Load Libraries
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(gt)
+library(rstatix)
+library(broom)
+```
+
+### Import Data
+
+```{r}
+hansul <- read_excel("data/hansul.xlsx")
+hansul <- tibble(hansul)
+```
+
+### Row Wise Mean for H and S
+
+```{r}
+hansul <- hansul |>
+  rowwise() |>
+  mutate(h_mean = mean((c_across(h1:h10))),
+         s_mean = mean((c_across(s1:s20)))) |>
+  ungroup()
+```
+
+### Descriptive Statistics of Profile
+
+```{r}
+hansul |>
+  get_summary_stats(edad,
+    show = c("mean", "sd", "min", "max"),
+  ) |>
+  mutate_if(is.numeric, round, 2) |>
+  gt()
+```
+
+```{r}
+hansul |>
+  count(kasarian) |>
+  mutate(
+    percent = round((n / sum(n))*100, digits = 2)
+  ) |>
+  gt()
+```
+
+### Objective 1
+
+```{r}
+han <- hansul |>
+  select(h1:h10) |>
+  get_summary_stats(
+    show = c("mean", "sd")
+  ) |>
+  mutate_if(is.numeric, round, 2) |>
+  mutate(QD = case_when(
+    mean >= 3.26 & mean <= 4 ~ "Lubos na Isinasakatuparan",
+    mean >= 2.51 & mean <= 3.25 ~ "Isinasakatuparan",
+    mean >= 1.76 & mean <= 2.5 ~ "Hindi Isinasakatuparan",
+    mean >= 1 & mean <= 1.75 ~ "Lubos na Hindi Isinasakatuparan"
+  ))
+gt(han)
+```
+
+```{r}
+han |>
+  get_summary_stats(mean, show = c("mean")) |>
+  mutate(average_han_sd = sqrt(sum((han$sd)^2)/n)) |>
+  mutate_if(is.numeric, round, 2) |>
+  mutate(QD = case_when(
+    mean >= 3.26 & mean <= 4 ~ "Lubos na Isinasakatuparan",
+    mean >= 2.51 & mean <= 3.25 ~ "Isinasakatuparan",
+    mean >= 1.76 & mean <= 2.5 ~ "Hindi Isinasakatuparan",
+    mean >= 1 & mean <= 1.75 ~ "Lubos na Hindi Isinasakatuparan"
+  )) |>
+  gt()
+```
+
+```{r}
+hansul |>
+  get_summary_stats(h_mean,
+    show = c("mean", "sd", "min", "max"),
+  ) |>
+  mutate_if(is.numeric, round, 2) |>
+  gt()
+```
+
+### Objective 2
+
+```{r}
+sul <- hansul |>
+  select(s1:s20) |>
+  get_summary_stats(
+    show = c("mean", "sd")
+  ) |>
+  mutate_if(is.numeric, round, 2) |>
+  mutate(QD = case_when(
+    mean >= 3.26 & mean <= 4 ~ "Napakabigat na Suliranin",
+    mean >= 2.51 & mean <= 3.25 ~ "Mabigat na Suliranin",
+    mean >= 1.76 & mean <= 2.5 ~ "Hindi Mabigat na Suliranin",
+    mean >= 1 & mean <= 1.75 ~ "Hindi Napakabigat na Suliranin"
+  ))
+gt(sul)
+```
+
+```{r}
+sul |>
+  get_summary_stats(mean, show = c("mean")) |>
+  mutate(average_sul_sd = sqrt(sum((sul$sd)^2)/n)) |>
+  mutate_if(is.numeric, round, 2) |>
+  mutate(QD = case_when(
+    mean >= 3.26 & mean <= 4 ~ "Napakabigat na Suliranin",
+    mean >= 2.51 & mean <= 3.25 ~ "Mabigat na Suliranin",
+    mean >= 1.76 & mean <= 2.5 ~ "Hindi Mabigat na Suliranin",
+    mean >= 1 & mean <= 1.75 ~ "Hindi Napakabigat na Suliranin"
+  )) |>
+  gt()
+```
+
+```{r}
+hansul |>
+  get_summary_stats(s_mean,
+    show = c("mean", "sd", "min", "max"),
+  ) |>
+  mutate_if(is.numeric, round, 2) |>
+  gt()
+```
+
+### Objective 3
+
+```{r}
+hansul |>
+  get_summary_stats(grado,
+    show = c("mean", "sd", "min", "max"),
+  ) |>
+  mutate_if(is.numeric, round, 2) |>
+  gt()
+```
+
+### Objective 4
+
+```{r}
+ob4 <- cor.test(hansul$h_mean, hansul$s_mean,
+                method = "pearson", exact=FALSE)
+
+tidy(ob4) |>
+  mutate_if(is.numeric, round, 2) |>
+  gt()
+```
+
+```{r}
+hansul |>
+ggplot() +
+  aes(x = h_mean, y = s_mean) +
+  geom_point(colour = "#0c4c8a", position = "jitter") +
+  theme_minimal()
+```
+
+### Objective 5
+
+```{r}
+ob5 <- cor.test(hansul$h_mean, hansul$grado,
+                method = "pearson", exact=FALSE)
+  
+tidy(ob5) |>
+  mutate_if(is.numeric, round, 2) |>
+  gt()
+```
+
+```{r}
+hansul |>
+ggplot() +
+  aes(x = h_mean, y = grado) +
+  geom_point(colour = "#0c4c8a", position = "jitter") +
+  theme_minimal()
+```
+
+### Objective 6
+
+```{r}
+ob6 <- cor.test(hansul$s_mean, hansul$grado,
+                method = "pearson", exact=FALSE)
+  
+tidy(ob6) |>
+  mutate_if(is.numeric, round, 2) |>
+  gt()
+```
+
+```{r}
+hansul |>
+ggplot() +
+  aes(x = s_mean, y = grado) +
+  geom_point(colour = "#0c4c8a", position = "jitter") +
+  theme_minimal()
+```
