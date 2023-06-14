@@ -36,6 +36,7 @@ library(gt)
 library(rstatix)
 library(broom)
 library(likert)
+library(car)
 ```
 
 # Import Data
@@ -43,6 +44,9 @@ library(likert)
 ```{r}
 propla <- read_excel("data/propla.xlsx")
 propla <- tibble(propla)
+
+plat <- read_csv("data/plat.csv", show_col_types = FALSE)
+plat <- tibble(plat)
 ```
 
 # Tidying and Transforming Data
@@ -130,7 +134,7 @@ propla |>
   gt()
 ```
 
-Objective 2
+# Objective 2
 
 ```{r}
 propla |>
@@ -140,6 +144,13 @@ propla |>
   ) |>
   gt()
 ```
+
+```{r}
+plat |>
+  mutate(percent = round((Count/347)*100, digits = 2)) |>
+  gt()
+```
+
 
 # Objective 3
 
@@ -203,6 +214,72 @@ est_fact_likert$results |>
   gt()
 ```
 
+```{r}
+propla |>
+  get_summary_stats(s_mean,
+    show = c("mean", "sd", "min", "max"),
+  ) |>
+  mutate_if(is.numeric, round, 2) |>
+  gt()
+```
+
+
 
 # Objective 4
+
+
+
+```{r}
+mod_propla_data <- propla |>
+  select(Kolehiyo, Kasarian, Edad, Type, BKP, Platform, s_mean)
+
+model <- lm(s_mean ~ ., data = mod_propla_data)
+anova_propla <- aov(s_mean ~ ., data = mod_propla_data)
+anova_propla1 <- Anova(anova_propla, type = "II")
+
+anova_propla1 |>
+  tidy() |>
+  mutate_if(is.numeric, round, 2) |>
+  gt()
+```
+
+```{r}
+summary(anova_propla)
+```
+
+
+```{r}
+group_by(propla, Kasarian) %>%
+  summarise(
+    count = n(),
+    mean = mean(s_mean, na.rm = TRUE),
+    sd = sd(s_mean, na.rm = TRUE)
+  ) |>
+  gt()
+```
+
+```{r}
+tukey_hsd(propla, s_mean ~ Kasarian)
+```
+
+```{r}
+leveneTest(s_mean ~ Kasarian, data = propla)
+```
+
+
+```{r}
+
+
+summary(model)
+```
+
+```{r}
+qqPlot(anova_propla$residuals,
+  id = FALSE # id = FALSE to remove point identification
+)
+```
+
+```{r}
+shapiro.test(anova_propla$residuals)
+```
 
